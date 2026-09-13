@@ -1,0 +1,172 @@
+/* Sin Pedir Permiso — design tokens.
+   Grotesk (Archivo) carries titles, UI and navigation. An editorial serif
+   (Source Serif 4) carries long-form reading: the statement, bios, captions.
+   A mono (IBM Plex Mono) is reserved for contact-sheet style metadata —
+   frame numbers, dates — a nod to negative strips, not decoration. */
+
+:root {
+  --paper: #f3f2f2;
+  --surface: #eae9e9;
+  --ink: #201e1d;
+  --ink-muted: color-mix(in srgb, #201e1d 62%, transparent);
+  --ink-faint: color-mix(in srgb, #201e1d 38%, transparent);
+  --divider: color-mix(in srgb, #201e1d 16%, transparent);
+  --divider-strong: color-mix(in srgb, #201e1d 82%, transparent);
+
+  --signal: #ec3013;
+  --signal-hover: #dd2b0f;
+  --signal-active: #ae1800;
+  --signal-wash: #fff2ef;
+
+  --deep-ink: #131110;
+  --paper-on-ink: #f3f2f2;
+  --ink-muted-on-ink: color-mix(in srgb, #f3f2f2 58%, transparent);
+
+  --font-display: var(--font-archivo), "Archivo", system-ui, sans-serif;
+  --font-serif: var(--font-serif4), "Source Serif 4", Georgia, serif;
+  --font-mono: var(--font-mono), "IBM Plex Mono", ui-monospace, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  --content-max: 1180px;
+  --reading-max: 640px;
+}
+
+* , *::before, *::after { box-sizing: border-box; }
+
+html, body { padding: 0; margin: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+p { margin: 0; }
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+::selection { background: color-mix(in srgb, var(--signal) 28%, transparent); }
+
+.serif { font-family: var(--font-serif); }
+.mono { font-family: var(--font-mono); }
+
+.wrap {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding-inline: var(--space-4);
+}
+@media (min-width: 720px) {
+  .wrap { padding-inline: var(--space-8); }
+}
+
+.hr {
+  height: 1px;
+  border: 0;
+  margin: 0;
+  background: var(--divider);
+}
+
+/* — buttons / links used as actions — */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--divider-strong);
+  padding: 11px 20px;
+  border-radius: 2px;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.btn:hover { border-color: var(--ink); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-solid {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.btn-solid:hover { background: var(--signal); border-color: var(--signal); }
+.btn-signal { background: var(--signal); color: var(--paper); border-color: var(--signal); }
+.btn-signal:hover { background: var(--signal-hover); border-color: var(--signal-hover); }
+.btn-ghost { border-color: transparent; padding-inline: 0; color: var(--signal); }
+.btn-ghost:hover { color: var(--signal-active); }
+.btn-block { width: 100%; justify-content: center; }
+.btn-sm { padding: 7px 14px; font-size: 13px; }
+
+.link-underline {
+  position: relative;
+  padding-bottom: 2px;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: left bottom;
+  background-repeat: no-repeat;
+  transition: background-size 0.2s ease;
+}
+.link-underline:hover { background-size: 100% 1px; }
+
+/* — forms — */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--ink-muted);
+}
+.input, textarea.input {
+  width: 100%;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--divider);
+  border-radius: 2px;
+  padding: 10px 12px;
+}
+.input:hover { border-color: var(--ink-faint); }
+.input:focus-visible { border-color: var(--signal); }
+textarea.input { min-height: 110px; resize: vertical; line-height: 1.5; }
+
+/* — contact-sheet frame numbers — */
+.frame-no {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ink-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
