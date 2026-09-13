@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { saveImage, removeImage } from "@/lib/storage";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-limits";
 
 export type PhotoFormState = { ok: true } | { error: string } | undefined;
 
@@ -17,6 +18,9 @@ export async function savePhoto(_prev: PhotoFormState, formData: FormData): Prom
 
   if (!titleEn || !titleEs) return { error: "Title is required in both English and Spanish." };
   if (!id && !imageFile) return { error: "Choose a photograph to upload." };
+  if (imageFile && imageFile.size > MAX_UPLOAD_BYTES) {
+    return { error: `That photo is too large (${(imageFile.size / 1024 / 1024).toFixed(1)}MB). Please use one under ${MAX_UPLOAD_MB}MB.` };
+  }
 
   if (id) {
     const existing = await prisma.photo.findUnique({ where: { id } });

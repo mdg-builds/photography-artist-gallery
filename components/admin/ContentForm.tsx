@@ -3,10 +3,12 @@
 import { useActionState, useState } from "react";
 import type { SiteContentData } from "@/lib/types";
 import { saveSiteContent, type ContentFormState } from "@/app/admin/content/actions";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-limits";
 
 export function ContentForm({ content }: { content: SiteContentData }) {
   const [state, formAction, pending] = useActionState<ContentFormState, FormData>(saveSiteContent, undefined);
   const [preview, setPreview] = useState<string | null>(content.heroImageUrl ?? null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   return (
     <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: "var(--space-8)", maxWidth: 760 }}>
@@ -31,10 +33,20 @@ export function ContentForm({ content }: { content: SiteContentData }) {
               className="input"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) setPreview(URL.createObjectURL(file));
+                if (!file) return;
+                if (file.size > MAX_UPLOAD_BYTES) {
+                  setFileError(`That photo is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Please use one under ${MAX_UPLOAD_MB}MB.`);
+                  e.target.value = "";
+                  return;
+                }
+                setFileError(null);
+                setPreview(URL.createObjectURL(file));
               }}
             />
           </div>
+          {fileError && (
+            <p role="alert" style={{ color: "var(--signal-active)", fontSize: 14 }}>{fileError}</p>
+          )}
           {preview && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={preview} alt="" style={{ width: 260, height: 150, objectFit: "cover", background: "var(--surface)" }} />

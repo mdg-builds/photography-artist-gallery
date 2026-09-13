@@ -3,10 +3,12 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { Bio } from "@/lib/types";
 import { saveBio, deleteBio, reorderBio, type BioFormState } from "@/app/admin/bios/actions";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-limits";
 
 export function BioManager({ bios }: { bios: Bio[] }) {
   const [editing, setEditing] = useState<Bio | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [state, formAction, pending] = useActionState<BioFormState, FormData>(saveBio, undefined);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -14,6 +16,7 @@ export function BioManager({ bios }: { bios: Bio[] }) {
     if (state && "ok" in state && state.ok) {
       setEditing(null);
       setPreview(null);
+      setFileError(null);
       formRef.current?.reset();
     }
   }, [state]);
@@ -21,11 +24,13 @@ export function BioManager({ bios }: { bios: Bio[] }) {
   function startEdit(bio: Bio) {
     setEditing(bio);
     setPreview(bio.imageUrl);
+    setFileError(null);
   }
 
   function cancelEdit() {
     setEditing(null);
     setPreview(null);
+    setFileError(null);
     formRef.current?.reset();
   }
 
@@ -78,10 +83,21 @@ export function BioManager({ bios }: { bios: Bio[] }) {
               className="input"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) setPreview(URL.createObjectURL(file));
+                if (!file) return;
+                if (file.size > MAX_UPLOAD_BYTES) {
+                  setFileError(`That photo is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Please use one under ${MAX_UPLOAD_MB}MB.`);
+                  e.target.value = "";
+                  return;
+                }
+                setFileError(null);
+                setPreview(URL.createObjectURL(file));
               }}
             />
           </div>
+
+          {fileError && (
+            <p role="alert" style={{ color: "var(--signal-active)", fontSize: 14 }}>{fileError}</p>
+          )}
 
           {preview && (
             // eslint-disable-next-line @next/next/no-img-element

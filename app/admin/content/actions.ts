@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { saveImage, removeImage } from "@/lib/storage";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-limits";
 
 export type ContentFormState = { ok: true } | { error: string } | undefined;
 
@@ -23,6 +24,9 @@ export async function saveSiteContent(_prev: ContentFormState, formData: FormDat
 
   const raw = formData.get("heroImage");
   const heroImageFile = raw instanceof File && raw.size > 0 ? raw : null;
+  if (heroImageFile && heroImageFile.size > MAX_UPLOAD_BYTES) {
+    return { error: `That photo is too large (${(heroImageFile.size / 1024 / 1024).toFixed(1)}MB). Please use one under ${MAX_UPLOAD_MB}MB.` };
+  }
   let heroImageUrl = existing?.heroImageUrl ?? null;
   if (heroImageFile) {
     heroImageUrl = await saveImage(heroImageFile, "site");
