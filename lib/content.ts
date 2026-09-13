@@ -18,12 +18,22 @@ const DEFAULT_SITE_CONTENT = {
 };
 
 export async function getSiteContent() {
-  const row = await prisma.siteContent.findUnique({ where: { id: 1 } });
-  return row ?? DEFAULT_SITE_CONTENT;
+  try {
+    const row = await prisma.siteContent.findUnique({ where: { id: 1 } });
+    return row ?? DEFAULT_SITE_CONTENT;
+  } catch (error) {
+    console.error("getSiteContent failed, falling back to defaults:", error);
+    return DEFAULT_SITE_CONTENT;
+  }
 }
 
 export async function getPhotos() {
-  return prisma.photo.findMany({ orderBy: { order: "asc" } });
+  try {
+    return await prisma.photo.findMany({ orderBy: { order: "asc" } });
+  } catch (error) {
+    console.error("getPhotos failed, returning empty list:", error);
+    return [];
+  }
 }
 
 export async function getPhotoWithNeighbors(id: string) {
@@ -40,5 +50,10 @@ export async function getPhotoWithNeighbors(id: string) {
 }
 
 export async function getBios() {
-  return prisma.bio.findMany({ orderBy: { order: "asc" } });
+  try {
+    return await prisma.bio.findMany({ orderBy: { order: "asc" } });
+  } catch (error) {
+    console.error("getBios failed, returning empty list:", error);
+    return [];
+  }
 }

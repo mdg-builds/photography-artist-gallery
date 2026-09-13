@@ -3,6 +3,7 @@ import { getSiteContent } from "@/lib/content";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+export const dynamic = "force-dynamic";
 
 export default async function OpengraphImage() {
   const content = await getSiteContent();
