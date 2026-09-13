@@ -9,3 +9,5 @@ next-env.d.ts
 public/uploads/*
 !public/uploads/.gitkeep
 .claude/*.local.md
+.vercel
+.env*
