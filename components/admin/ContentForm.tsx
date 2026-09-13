@@ -36,11 +36,12 @@ export function ContentForm({ content }: { content: SiteContentData }) {
               accept="image/*"
               className="input"
               onChange={async (e) => {
-                const file = e.target.files?.[0];
+                const input = e.target;
+                const file = input.files?.[0];
                 if (!file) return;
                 if (file.size > MAX_UPLOAD_BYTES) {
                   setFileError(`That photo is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Please use one under ${MAX_UPLOAD_MB}MB.`);
-                  e.target.value = "";
+                  input.value = "";
                   return;
                 }
                 setFileError(null);
@@ -50,6 +51,7 @@ export function ContentForm({ content }: { content: SiteContentData }) {
                 const url = await tryDirectUpload(file, "site");
                 setUploading(false);
                 setDirectUrl(url);
+                if (url) input.value = "";
               }}
             />
           </div>
