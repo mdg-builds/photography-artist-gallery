@@ -47,7 +47,7 @@ export function HomeView({ content, photos }: { content: SiteContentData; photos
           }}
         >
           <div className="mono" style={{ fontSize: 13, marginBottom: "var(--space-3)", opacity: 0.75 }}>
-            {t("North Carolina, 2017–2026", "Carolina del Norte, 2017–2026")}
+            {t("North Carolina, 2016–2026", "Carolina del Norte, 2016–2026")}
           </div>
           <h1 style={{ fontSize: "clamp(40px, 8vw, 96px)", maxWidth: 920 }}>{content.brand}</h1>
           {t(content.heroSubtitleEn, content.heroSubtitleEs) && (
