@@ -70,7 +70,7 @@ export function HomeView({ content, photos }: { content: SiteContentData; photos
         </div>
       </section>
 
-      <section className="wrap" style={{ paddingBlock: "var(--space-20)" }}>
+      <section className="wrap statement-row" style={{ paddingBlock: "var(--space-20)" }}>
         <div style={{ maxWidth: "var(--reading-max)" }}>
           {statement.map((para, i) => (
             <p key={i} className="serif" style={{ fontSize: 19, lineHeight: 1.7, marginBottom: "var(--space-5)" }}>
@@ -82,6 +82,11 @@ export function HomeView({ content, photos }: { content: SiteContentData; photos
               {t(content.heroCreditEn, content.heroCreditEs)}
             </p>
           )}
+        </div>
+        <div className="statement-margin" aria-hidden style={{ borderLeft: "1px solid var(--signal)", paddingLeft: "var(--space-6)" }}>
+          <p className="serif" style={{ fontSize: 40, fontStyle: "italic", lineHeight: 1.25, color: "var(--ink-faint)" }}>
+            sin pedir permiso.
+          </p>
         </div>
       </section>
 
@@ -121,6 +126,14 @@ export function HomeView({ content, photos }: { content: SiteContentData; photos
       )}
 
       <SiteFooter creditEn={content.footerCreditEn} creditEs={content.footerCreditEs} />
+
+      <style>{`
+        .statement-row { display: flex; gap: var(--space-10); align-items: flex-start; }
+        .statement-margin { display: none; flex: 1; padding-top: var(--space-2); }
+        @media (min-width: 960px) {
+          .statement-margin { display: block; }
+        }
+      `}</style>
     </>
   );
 }
