@@ -22,13 +22,17 @@ export async function saveSiteContent(_prev: ContentFormState, formData: FormDat
 
   const existing = await prisma.siteContent.findUnique({ where: { id: 1 } });
 
+  const directUrl = String(formData.get("heroImageUrl") || "").trim() || null;
   const raw = formData.get("heroImage");
-  const heroImageFile = raw instanceof File && raw.size > 0 ? raw : null;
+  const heroImageFile = !directUrl && raw instanceof File && raw.size > 0 ? raw : null;
   if (heroImageFile && heroImageFile.size > MAX_UPLOAD_BYTES) {
     return { error: `That photo is too large (${(heroImageFile.size / 1024 / 1024).toFixed(1)}MB). Please use one under ${MAX_UPLOAD_MB}MB.` };
   }
   let heroImageUrl = existing?.heroImageUrl ?? null;
-  if (heroImageFile) {
+  if (directUrl) {
+    heroImageUrl = directUrl;
+    await removeImage(existing?.heroImageUrl);
+  } else if (heroImageFile) {
     heroImageUrl = await saveImage(heroImageFile, "site");
     await removeImage(existing?.heroImageUrl);
   }

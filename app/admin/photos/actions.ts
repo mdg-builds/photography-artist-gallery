@@ -13,11 +13,16 @@ export async function savePhoto(_prev: PhotoFormState, formData: FormData): Prom
   const titleEs = String(formData.get("titleEs") || "").trim();
   const descEn = String(formData.get("descEn") || "").trim();
   const descEs = String(formData.get("descEs") || "").trim();
+  // Preferred path: the browser already uploaded straight to Blob storage
+  // (see lib/client-upload.ts) and this is just the resulting URL. Falls
+  // back to a raw File field when direct upload wasn't available (e.g.
+  // local dev with no Blob store configured).
+  const directUrl = String(formData.get("imageUrl") || "").trim() || null;
   const raw = formData.get("image");
-  const imageFile = raw instanceof File && raw.size > 0 ? raw : null;
+  const imageFile = !directUrl && raw instanceof File && raw.size > 0 ? raw : null;
 
   if (!titleEn || !titleEs) return { error: "Title is required in both English and Spanish." };
-  if (!id && !imageFile) return { error: "Choose a photograph to upload." };
+  if (!id && !directUrl && !imageFile) return { error: "Choose a photograph to upload." };
   if (imageFile && imageFile.size > MAX_UPLOAD_BYTES) {
     return { error: `That photo is too large (${(imageFile.size / 1024 / 1024).toFixed(1)}MB). Please use one under ${MAX_UPLOAD_MB}MB.` };
   }
@@ -26,14 +31,17 @@ export async function savePhoto(_prev: PhotoFormState, formData: FormData): Prom
     const existing = await prisma.photo.findUnique({ where: { id } });
     if (!existing) return { error: "That photograph no longer exists." };
     let imageUrl = existing.imageUrl;
-    if (imageFile) {
+    if (directUrl) {
+      imageUrl = directUrl;
+      await removeImage(existing.imageUrl);
+    } else if (imageFile) {
       imageUrl = await saveImage(imageFile, "photos");
       await removeImage(existing.imageUrl);
     }
     await prisma.photo.update({ where: { id }, data: { titleEn, titleEs, descEn, descEs, imageUrl } });
     revalidatePath(`/exhibition/${id}`);
   } else {
-    const imageUrl = await saveImage(imageFile!, "photos");
+    const imageUrl = directUrl ?? (await saveImage(imageFile!, "photos"));
     const maxOrder = await prisma.photo.aggregate({ _max: { order: true } });
     await prisma.photo.create({
       data: { imageUrl, titleEn, titleEs, descEn, descEs, order: (maxOrder._max.order ?? -1) + 1 },

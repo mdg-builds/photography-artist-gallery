@@ -4,11 +4,14 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import type { Photo } from "@/lib/types";
 import { savePhoto, deletePhoto, reorderPhoto, type PhotoFormState } from "@/app/admin/photos/actions";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-limits";
+import { tryDirectUpload } from "@/lib/client-upload";
 
 export function PhotoManager({ photos }: { photos: Photo[] }) {
   const [editing, setEditing] = useState<Photo | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [directUrl, setDirectUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [state, formAction, pending] = useActionState<PhotoFormState, FormData>(savePhoto, undefined);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -17,6 +20,7 @@ export function PhotoManager({ photos }: { photos: Photo[] }) {
       setEditing(null);
       setPreview(null);
       setFileError(null);
+      setDirectUrl(null);
       formRef.current?.reset();
     }
   }, [state]);
@@ -25,12 +29,14 @@ export function PhotoManager({ photos }: { photos: Photo[] }) {
     setEditing(photo);
     setPreview(photo.imageUrl);
     setFileError(null);
+    setDirectUrl(null);
   }
 
   function cancelEdit() {
     setEditing(null);
     setPreview(null);
     setFileError(null);
+    setDirectUrl(null);
     formRef.current?.reset();
   }
 
@@ -70,6 +76,8 @@ export function PhotoManager({ photos }: { photos: Photo[] }) {
             </div>
           </div>
 
+          <input type="hidden" name="imageUrl" value={directUrl ?? ""} />
+
           <div className="field">
             <label htmlFor="image">Photograph {editing ? "(leave empty to keep the current image)" : ""}</label>
             <input
@@ -78,7 +86,7 @@ export function PhotoManager({ photos }: { photos: Photo[] }) {
               type="file"
               accept="image/*"
               className="input"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 if (file.size > MAX_UPLOAD_BYTES) {
@@ -87,7 +95,12 @@ export function PhotoManager({ photos }: { photos: Photo[] }) {
                   return;
                 }
                 setFileError(null);
+                setDirectUrl(null);
                 setPreview(URL.createObjectURL(file));
+                setUploading(true);
+                const url = await tryDirectUpload(file, "photos");
+                setUploading(false);
+                setDirectUrl(url);
               }}
             />
           </div>
@@ -106,8 +119,8 @@ export function PhotoManager({ photos }: { photos: Photo[] }) {
           )}
 
           <div style={{ display: "flex", gap: "var(--space-3)" }}>
-            <button type="submit" className="btn btn-solid" disabled={pending}>
-              {pending ? "Saving…" : editing ? "Save changes" : "Add photograph"}
+            <button type="submit" className="btn btn-solid" disabled={pending || uploading}>
+              {uploading ? "Uploading photo…" : pending ? "Saving…" : editing ? "Save changes" : "Add photograph"}
             </button>
             {editing && (
               <button type="button" className="btn" onClick={cancelEdit}>

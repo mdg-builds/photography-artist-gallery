@@ -14,8 +14,9 @@ export async function saveBio(_prev: BioFormState, formData: FormData): Promise<
   const roleEs = String(formData.get("roleEs") || "").trim();
   const bodyEn = String(formData.get("bodyEn") || "").trim();
   const bodyEs = String(formData.get("bodyEs") || "").trim();
+  const directUrl = String(formData.get("imageUrl") || "").trim() || null;
   const raw = formData.get("image");
-  const imageFile = raw instanceof File && raw.size > 0 ? raw : null;
+  const imageFile = !directUrl && raw instanceof File && raw.size > 0 ? raw : null;
 
   if (!name) return { error: "Name is required." };
   if (imageFile && imageFile.size > MAX_UPLOAD_BYTES) {
@@ -26,13 +27,16 @@ export async function saveBio(_prev: BioFormState, formData: FormData): Promise<
     const existing = await prisma.bio.findUnique({ where: { id } });
     if (!existing) return { error: "That bio no longer exists." };
     let imageUrl = existing.imageUrl;
-    if (imageFile) {
+    if (directUrl) {
+      imageUrl = directUrl;
+      await removeImage(existing.imageUrl);
+    } else if (imageFile) {
       imageUrl = await saveImage(imageFile, "bios");
       await removeImage(existing.imageUrl);
     }
     await prisma.bio.update({ where: { id }, data: { name, roleEn, roleEs, bodyEn, bodyEs, imageUrl } });
   } else {
-    const imageUrl = imageFile ? await saveImage(imageFile, "bios") : null;
+    const imageUrl = directUrl ?? (imageFile ? await saveImage(imageFile, "bios") : null);
     const maxOrder = await prisma.bio.aggregate({ _max: { order: true } });
     await prisma.bio.create({
       data: { name, roleEn, roleEs, bodyEn, bodyEs, imageUrl, order: (maxOrder._max.order ?? -1) + 1 },

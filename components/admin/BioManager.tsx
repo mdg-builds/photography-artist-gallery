@@ -4,11 +4,14 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import type { Bio } from "@/lib/types";
 import { saveBio, deleteBio, reorderBio, type BioFormState } from "@/app/admin/bios/actions";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-limits";
+import { tryDirectUpload } from "@/lib/client-upload";
 
 export function BioManager({ bios }: { bios: Bio[] }) {
   const [editing, setEditing] = useState<Bio | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [directUrl, setDirectUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [state, formAction, pending] = useActionState<BioFormState, FormData>(saveBio, undefined);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -17,6 +20,7 @@ export function BioManager({ bios }: { bios: Bio[] }) {
       setEditing(null);
       setPreview(null);
       setFileError(null);
+      setDirectUrl(null);
       formRef.current?.reset();
     }
   }, [state]);
@@ -25,12 +29,14 @@ export function BioManager({ bios }: { bios: Bio[] }) {
     setEditing(bio);
     setPreview(bio.imageUrl);
     setFileError(null);
+    setDirectUrl(null);
   }
 
   function cancelEdit() {
     setEditing(null);
     setPreview(null);
     setFileError(null);
+    setDirectUrl(null);
     formRef.current?.reset();
   }
 
@@ -73,6 +79,8 @@ export function BioManager({ bios }: { bios: Bio[] }) {
             </div>
           </div>
 
+          <input type="hidden" name="imageUrl" value={directUrl ?? ""} />
+
           <div className="field">
             <label htmlFor="image">Photo {editing ? "(leave empty to keep the current one)" : ""}</label>
             <input
@@ -81,7 +89,7 @@ export function BioManager({ bios }: { bios: Bio[] }) {
               type="file"
               accept="image/*"
               className="input"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 if (file.size > MAX_UPLOAD_BYTES) {
@@ -90,7 +98,12 @@ export function BioManager({ bios }: { bios: Bio[] }) {
                   return;
                 }
                 setFileError(null);
+                setDirectUrl(null);
                 setPreview(URL.createObjectURL(file));
+                setUploading(true);
+                const url = await tryDirectUpload(file, "bios");
+                setUploading(false);
+                setDirectUrl(url);
               }}
             />
           </div>
@@ -109,8 +122,8 @@ export function BioManager({ bios }: { bios: Bio[] }) {
           )}
 
           <div style={{ display: "flex", gap: "var(--space-3)" }}>
-            <button type="submit" className="btn btn-solid" disabled={pending}>
-              {pending ? "Saving…" : editing ? "Save changes" : "Add bio"}
+            <button type="submit" className="btn btn-solid" disabled={pending || uploading}>
+              {uploading ? "Uploading photo…" : pending ? "Saving…" : editing ? "Save changes" : "Add bio"}
             </button>
             {editing && (
               <button type="button" className="btn" onClick={cancelEdit}>Cancel</button>

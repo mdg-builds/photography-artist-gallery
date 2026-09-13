@@ -4,11 +4,14 @@ import { useActionState, useState } from "react";
 import type { SiteContentData } from "@/lib/types";
 import { saveSiteContent, type ContentFormState } from "@/app/admin/content/actions";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-limits";
+import { tryDirectUpload } from "@/lib/client-upload";
 
 export function ContentForm({ content }: { content: SiteContentData }) {
   const [state, formAction, pending] = useActionState<ContentFormState, FormData>(saveSiteContent, undefined);
   const [preview, setPreview] = useState<string | null>(content.heroImageUrl ?? null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [directUrl, setDirectUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   return (
     <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: "var(--space-8)", maxWidth: 760 }}>
@@ -23,6 +26,7 @@ export function ContentForm({ content }: { content: SiteContentData }) {
       <section>
         <h2 style={{ fontSize: 18, marginBottom: "var(--space-3)" }}>Home page hero</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+          <input type="hidden" name="heroImageUrl" value={directUrl ?? ""} />
           <div className="field">
             <label htmlFor="heroImage">Hero photograph {content.heroImageUrl ? "(leave empty to keep the current one)" : "(defaults to the first exhibition photograph if left empty)"}</label>
             <input
@@ -31,7 +35,7 @@ export function ContentForm({ content }: { content: SiteContentData }) {
               type="file"
               accept="image/*"
               className="input"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 if (file.size > MAX_UPLOAD_BYTES) {
@@ -40,7 +44,12 @@ export function ContentForm({ content }: { content: SiteContentData }) {
                   return;
                 }
                 setFileError(null);
+                setDirectUrl(null);
                 setPreview(URL.createObjectURL(file));
+                setUploading(true);
+                const url = await tryDirectUpload(file, "site");
+                setUploading(false);
+                setDirectUrl(url);
               }}
             />
           </div>
@@ -113,8 +122,8 @@ export function ContentForm({ content }: { content: SiteContentData }) {
       )}
 
       <div>
-        <button type="submit" className="btn btn-solid" disabled={pending}>
-          {pending ? "Saving…" : "Save changes"}
+        <button type="submit" className="btn btn-solid" disabled={pending || uploading}>
+          {uploading ? "Uploading photo…" : pending ? "Saving…" : "Save changes"}
         </button>
       </div>
 
